@@ -10,14 +10,14 @@ go微服务学习示例
 ├── cmd                启动命令
 │   └── logservice    
 │       └── main.go    日志服务启动脚本
-│   └── registryservice    
+│   └── registryservice    注册中心
 │       └── main.go    注册服务启动脚本
 ├── log                日志服务
 │   └── service.go
 ├── registry           注册服务
 │   └── registration.go
 │   └── service.go
-├── service            服务
+├── service            服务中心
 │   └── service.go
 ├── go.mod   
 └── README.md  
