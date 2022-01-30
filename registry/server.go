@@ -2,13 +2,15 @@ package registry
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
 )
 
-const ServerPort = ":3000"
-const ServerUrl = "http://localhost" + ServerPort + "/services"
+const ServicePort = ":3000"
+const ServiceUrl = "http://localhost" + ServicePort + "/services"
 
 // 服务注册
 type registry struct {
@@ -16,12 +18,25 @@ type registry struct {
 	mutex         *sync.Mutex
 }
 
-// 添加服务
+// 添加服务注册
 func (r *registry) add(reg Registration) error {
 	r.mutex.Lock()
 	r.registrations = append(r.registrations, reg)
 	r.mutex.Unlock()
 	return nil
+}
+
+// 取消服务注册
+func (r *registry) remove(reg Registration) error {
+	for i := range r.registrations {
+		if r.registrations[i].ServiceName == reg.ServiceName {
+			r.mutex.Lock()
+			r.registrations = append(r.registrations[:i], r.registrations[i+1:]...)
+			r.mutex.Unlock()
+			return nil
+		}
+	}
+	return fmt.Errorf("Service %s not found, Url %s", reg.ServiceName, reg.ServiceUrl)
 }
 
 var reg = registry{
@@ -32,11 +47,11 @@ var reg = registry{
 type RegistryService struct {
 }
 
-func (s RegistryService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s RegistryService) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.Println("Request received")
-	switch r.Method {
+	switch req.Method {
 	case http.MethodPost:
-		dec := json.NewDecoder(r.Body)
+		dec := json.NewDecoder(req.Body)
 		var r Registration
 		err := dec.Decode(&r)
 		if err != nil {
@@ -51,6 +66,17 @@ func (s RegistryService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+	case http.MethodDelete:
+		payload, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		url := string(payload)
+		log.Printf("Removing service at URL: %s", url)
+		err = reg.remove(Registration{ServiceUrl: url})
+
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return

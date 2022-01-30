@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-micro-service/log"
+	"go-micro-service/registry"
 	"go-micro-service/service"
 	stlog "log"
 )
@@ -11,13 +12,20 @@ import (
 func main() {
 	log.Run("./distributed.log")
 	host, port := "localhost", "4000"
+	serviceAddress := fmt.Sprintf("http://%s:%s", host, port)
+	r := registry.Registration{
+		ServiceName: "Log Service",
+		ServiceUrl:  serviceAddress,
+	}
+
 	ctx, err := service.Start(
 		context.Background(),
-		"Log Service",
 		host,
 		port,
+		r,
 		log.RegisterHandler,
 	)
+
 	if err != nil {
 		stlog.Fatalln(err)
 	}
