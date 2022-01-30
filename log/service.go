@@ -22,7 +22,7 @@ func (fl fileLog) Write(data []byte) (int, error) {
 	return f.Write(data)
 }
 
-// 写入的文件地址
+// 写入的文件地址, 自定义log
 func Run(destination string) {
 	// 前缀go 写入时间
 	log = stlog.New(fileLog(destination), "go: ", stlog.LstdFlags)
@@ -46,6 +46,7 @@ func RegisterHandler() {
 	})
 }
 
+// 调用自定义log写入日志
 func writer(message string) {
 	log.Printf("%v\n", message)
 }
